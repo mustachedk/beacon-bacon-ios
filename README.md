@@ -11,7 +11,7 @@ You are now able to use the lib.
 You can either use your own integration with API using element from the [./core](https://github.com/mustachedk/beacon-bacon-ios/tree/master/beacon-bacon-lib-ios/core) folder.
 You can also use the default UI for wayfinding [./wayfinding](https://github.com/mustachedk/beacon-bacon-ios/tree/master/beacon-bacon-lib-ios/wayfinding)
 
-## USING WAYFINDING
+## How to use
 
 You can see an example in using the default wayfinding UI [Beacon Bacon IOS Demo](https://github.com/mustachedk/beacon-bacon-ios-demo)
 
@@ -54,4 +54,15 @@ mapViewController.wayfindingRequstObject = requstObject;
 [self presentViewController:mapViewController animated:true completion:nil];
 ```
 
+## Security Vulnerabilities
 
+If you discover a security vulnerability within the Beacon Bacon iOS library, please send an e-mail to us at developer@mustache.dk. All security vulnerabilities will be promptly addressed.
+
+
+## Contributing
+
+Beacon Bacon is still in early development, so we have not yet developed a Contribution Guide. Pull requests are always welcome.
+
+## License
+
+The Beacon Bacon iOS library, is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
