@@ -41,21 +41,19 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
-    self.topLineView.backgroundColor = [[BBConfig sharedConfig] customColor];
-    
+        
     self.navBarTitleLabel.font = [[BBConfig sharedConfig] lightFontWithSize:18];
-    self.navBarTitleLabel.text = NSLocalizedStringFromTable(@"change.map", @"BBLocalizable", nil).uppercaseString;
+    self.navBarTitleLabel.text = @"Skift bibliotek";
     self.navBarTitleLabel.textColor = [UIColor colorWithRed:97.0f/255.0f green:97.0f/255.0f blue:97.0f/255.0f alpha:1.0];
     
     datasourceDelegate = [BBLibrarySelectDatasourceDelegate new];
-    datasourceDelegate.delegate = self;
+    datasourceDelegate.selectDelegate = self;
     
     self.tableView.dataSource = datasourceDelegate;
     self.tableView.delegate = datasourceDelegate;
     
-    [self.tableView registerNib:[UINib nibWithNibName:@"BBLoadingIndicatorCell" bundle:nil] forCellReuseIdentifier:@"BBLoadingIndicatorCell"];
-    [self.tableView registerNib:[UINib nibWithNibName:@"BBEmptyTableViewCell" bundle:nil] forCellReuseIdentifier:@"BBEmptyTableViewCell"];
+    [self.tableView registerNib:[UINib nibWithNibName:@"BBLoadingIndicatorCell" bundle:[BBConfig libBundle]] forCellReuseIdentifier:@"BBLoadingIndicatorCell"];
+    [self.tableView registerNib:[UINib nibWithNibName:@"BBEmptyTableViewCell" bundle:[BBConfig libBundle]] forCellReuseIdentifier:@"BBEmptyTableViewCell"];
     
     [self.tableView reloadData];
     
@@ -73,15 +71,12 @@
     
     [[BBDataManager sharedInstance] fetchAllPlacesWithCompletion:^(NSArray *places, NSError *error) {
         if (error == nil) {
-            
-            NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"order" ascending:YES];
-            NSArray *sortDescriptors = [NSArray arrayWithObject:sortDescriptor];
-            datasourceDelegate.datasource = [places sortedArrayUsingDescriptors:sortDescriptors];
+            datasourceDelegate.data = places;
             
             [self.tableView reloadData];
         } else {
             
-            datasourceDelegate.datasource = [NSMutableArray new];
+            datasourceDelegate.data = [NSMutableArray new];
             [self.tableView reloadData];
             NSLog(@"An Error Occured: %@", error.localizedDescription);
         }

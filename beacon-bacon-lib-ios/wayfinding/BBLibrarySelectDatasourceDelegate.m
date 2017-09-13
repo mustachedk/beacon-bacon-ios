@@ -27,11 +27,11 @@
 @implementation BBLibrarySelectDatasourceDelegate
 
 - (BOOL) isEmpty {
-    return ![self isLoading] && self.datasource.count == 0;
+    return ![self isLoading] && self.data.count == 0;
 }
 
 - (BOOL) isLoading {
-    return self.datasource == nil;
+    return self.data == nil;
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -44,7 +44,7 @@
     } else if ([self isEmpty]) {
         return 1;
     } else {
-        return self.datasource.count;
+        return self.data.count;
     }
 }
 
@@ -52,7 +52,7 @@
     if ([self isLoading]) {
         BBLoadingIndicatorCell* cell = [tableView dequeueReusableCellWithIdentifier:@"BBLoadingIndicatorCell"];
         if(cell == nil){
-            cell = [[[NSBundle mainBundle] loadNibNamed:@"BBLoadingIndicatorCell" owner:self options:nil] firstObject];
+            cell = [[[BBConfig libBundle] loadNibNamed:@"BBLoadingIndicatorCell" owner:self options:nil] firstObject];
         }
         
         [cell.loadingIndicator startAnimating];
@@ -61,11 +61,11 @@
     } else if ([self isEmpty]) {
         BBEmptyTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"BBEmptyTableViewCell" forIndexPath:indexPath];
         if (cell == nil){
-            cell = [[[NSBundle mainBundle] loadNibNamed:@"BBEmptyTableViewCell" owner:self options:nil] firstObject];
+            cell = [[[BBConfig libBundle] loadNibNamed:@"BBEmptyTableViewCell" owner:self options:nil] firstObject];
         }
         
-        cell.emptyImageView.image = [UIImage imageNamed:@"empty-icon-poi"];
-        [cell setTitle:NSLocalizedStringFromTable(@"no.points.of.interest.title", @"BBLocalizable", nil).uppercaseString description:NSLocalizedStringFromTable(@"no.points.of.interest.description", @"BBLocalizable", nil)];
+        cell.emptyImageView.image = [UIImage imageNamed:@"empty-icon-poi" inBundle:[BBConfig libBundle] compatibleWithTraitCollection:nil];
+        [cell setTitle:@"Ingen interessepunkter" description:@"Kom tilbage senere og se om vi har tilføjet nogle interessepunkter"];
         
         return cell;
 
@@ -80,8 +80,9 @@
             cell.contentView.backgroundColor = [UIColor colorWithRed:0.94 green:0.94 blue:0.94 alpha:1.00];
         }
         
-        BBPlace *place = self.datasource[indexPath.row];
+        BBPlace *place = self.data[indexPath.row];
         cell.textLabel.text = place.name;
+        cell.textLabel.font = [[BBConfig sharedConfig] lightFontWithSize:16];
         
         if ([[NSString stringWithFormat:@"%ld", (long)place.place_id] isEqualToString:[BBConfig sharedConfig].currentPlaceId]) {
             [cell setAccessoryType:UITableViewCellAccessoryCheckmark];
@@ -122,9 +123,9 @@
     } else if ([self isEmpty]) {
 
     } else {
-        BBPlace *place = self.datasource[indexPath.row];
-        if ([self.delegate respondsToSelector:@selector(didSelectPlace:)]){
-            [self.delegate didSelectPlace:place];
+        BBPlace *place = self.data[indexPath.row];
+        if ([self.selectDelegate respondsToSelector:@selector(didSelectPlace:)]){
+            [self.selectDelegate didSelectPlace:place];
         }
     }
 }

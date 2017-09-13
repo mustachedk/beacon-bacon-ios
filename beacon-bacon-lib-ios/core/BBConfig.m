@@ -42,6 +42,10 @@
     return _sharedConfig;
 }
 
++ (NSBundle *)libBundle {
+    return [NSBundle bundleWithIdentifier:@"dk.mustache.beaconbaconlib"];
+}
+
 -(UIFont *)regularFontWithSize:(CGFloat)size {
     return [self.regularFont fontWithSize:size];
 }
@@ -51,6 +55,13 @@
 }
 
 - (void) setupWithPlaceIdentifier:(NSString *)identifier withCompletion:(void (^)(NSString *placeIdentifier, NSError *error))completionBlock {
+    
+    if (identifier == nil) {
+        [BBConfig sharedConfig].currentPlaceId = nil;
+        completionBlock(nil, nil);
+        return;
+    }
+    
     [[BBDataManager sharedInstance] fetchPlaceIdFromIdentifier:identifier withCompletion:^(NSString *placeIdentifier, NSError *error) {
         if (error == nil && placeIdentifier != nil) {
             [BBConfig sharedConfig].currentPlaceId = placeIdentifier;

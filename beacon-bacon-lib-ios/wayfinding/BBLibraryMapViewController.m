@@ -64,7 +64,6 @@
     CGFloat lastScale;
     
     BOOL invalidLocationAlertShown;
-    
 }
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
@@ -75,6 +74,11 @@
     }
     return self;
 }
+
++ (BBLibraryMapViewController *) mapViewController {
+    return [[BBLibraryMapViewController alloc] initWithNibName:@"BBLibraryMapViewController" bundle:[NSBundle bundleWithIdentifier:@"dk.mustache.beaconbaconlib"]];
+}
+
 
 - (void) applyRoundAndShadow:(UIView *)view {
     
@@ -108,7 +112,7 @@
 
     if ([BBConfig sharedConfig].currentPlaceId == nil) {
         currentSelectLibraryViewController = nil;
-        currentSelectLibraryViewController = [[BBLibrarySelectViewController alloc] initWithNibName:@"BBLibrarySelectViewController" bundle:nil];
+        currentSelectLibraryViewController = [[BBLibrarySelectViewController alloc] initWithNibName:@"BBLibrarySelectViewController" bundle:[NSBundle bundleWithIdentifier:@"dk.mustache.beaconbaconlib"]];
         currentSelectLibraryViewController.dismissAsSubview = true;
         [self.view addSubview:currentSelectLibraryViewController.view];
         [self addChildViewController:currentSelectLibraryViewController];
@@ -183,7 +187,7 @@
             
         } else {
             if (!invalidLocationAlertShown) {
-                [self showAlert:NSLocalizedStringFromTable(@"invalid.current.location.title", @"BBLocalizable", nil) message:NSLocalizedStringFromTable(@"invalid.current.location.message", @"BBLocalizable", nil)];
+                [self showAlert:@"Vi kan ikke finde din placering" message:@"Sørg for at aktivere bluetooth og tjek eventuelt om du har givet app’en tilladelse til at bruge lokalitet service."];
                 invalidLocationAlertShown = true;
             }
         }
@@ -245,7 +249,7 @@
         case CBCentralManagerStatePoweredOff: stateString = @"Bluetooth is currently powered off.";
             myCurrentLocationView.hidden = YES;
             if (!invalidLocationAlertShown) {
-                [self showAlert:NSLocalizedStringFromTable(@"invalid.current.location.title", @"BBLocalizable", nil) message:NSLocalizedStringFromTable(@"invalid.current.location.message", @"BBLocalizable", nil)];
+                [self showAlert:@"Vi kan ikke finde din placering" message:@"Sørg for at aktivere bluetooth og tjek eventuelt om du har givet app’en tilladelse til at bruge lokalitet service."];
                 invalidLocationAlertShown = true;
             }
             break;
@@ -260,7 +264,7 @@
 }
 
 - (void)showAlert:(NSString*)title message:(NSString*)message {
-    [[[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:NSLocalizedStringFromTable(@"ok", @"BBLocalizable", nil).uppercaseString otherButtonTitles:nil] show];
+    [[[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles:nil] show];
 }
 
 #pragma mark - UI Helpers
@@ -343,12 +347,14 @@
     
     if (currentDisplayFloorRef == nil) {
         self.navBarTitleLabel.text = @"";
+        self.navBarSubtitleLabel.text = @"";
         self.navBarNextButton.enabled = NO;
         self.navBarPreviousButton.enabled = NO;
         return;
     }
     
-    self.navBarTitleLabel.text = [NSString stringWithFormat:@"%@: %@", NSLocalizedStringFromTable(@"showing", @"BBLocalizable", nil).uppercaseString, currentDisplayFloorRef.name.uppercaseString];
+    self.navBarTitleLabel.text = currentDisplayFloorRef.name;
+    self.navBarSubtitleLabel.text = place.name;
 
     [self updateNavBarNextPrevButtons];
 }
@@ -370,23 +376,38 @@
     
     self.mapScrollView.backgroundColor = [UIColor clearColor];
     
-    self.topLineView.backgroundColor            = [[BBConfig sharedConfig] customColor];
     self.materialPopDownView.backgroundColor    = [[BBConfig sharedConfig] customColor];
     
     self.navBarTitleLabel.font          = [[BBConfig sharedConfig] lightFontWithSize:14];
+    self.navBarSubtitleLabel.font       = [[BBConfig sharedConfig] lightFontWithSize:11];
+    
     self.materialTopSubtitleLabel.font  = [[BBConfig sharedConfig] lightFontWithSize:10];
     
     self.materialTopTitleLabel.font     = [[BBConfig sharedConfig] regularFontWithSize:12];
     
     [self.navBarTitleLabel setAdjustsFontSizeToFitWidth:YES];
-    
+    [self.navBarSubtitleLabel setAdjustsFontSizeToFitWidth:YES];
+
     self.navBarTitleLabel.text = @"";
+    self.navBarSubtitleLabel.text = @"";
     self.navBarTitleLabel.textColor = [UIColor colorWithRed:97.0f/255.0f green:97.0f/255.0f blue:97.0f/255.0f alpha:1.0];
+    self.navBarSubtitleLabel.textColor = [UIColor colorWithRed:97.0f/255.0f green:97.0f/255.0f blue:97.0f/255.0f alpha:0.75];
+    
+    UITapGestureRecognizer *changeMapTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(changeMapTapGestureAction:)];
+    UITapGestureRecognizer *changeMapTapGesture1 = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(changeMapTapGestureAction:)];
+
+    [self.navBarTitleLabel setUserInteractionEnabled:YES];
+    [self.navBarSubtitleLabel setUserInteractionEnabled:YES];
+
+    [self.navBarTitleLabel addGestureRecognizer:changeMapTapGesture];
+    [self.navBarSubtitleLabel addGestureRecognizer:changeMapTapGesture1];
 
     self.materialTopTitleLabel.textColor = [UIColor whiteColor];
     self.materialTopSubtitleLabel.textColor = [UIColor whiteColor];
     
-    [self.materialPopDownButton setTitle:NSLocalizedStringFromTable(@"end.find.material", @"BBLocalizable", nil).uppercaseString forState:UIControlStateNormal];
+    self.materialPopDownButton.titleLabel.font = [[BBConfig sharedConfig] lightFontWithSize:10];
+    
+    [self.materialPopDownButton setTitle:@"Afslut" forState:UIControlStateNormal];
     
     [self applyRoundAndShadow:self.myFoundMaterialButton];
     [self applyRoundAndShadow:self.myLocationButton];
@@ -404,11 +425,9 @@
     myCurrentLocationView.tag = BB_MAP_TAG_MY_POSITION;
     myCurrentLocationView.hidden = YES;
     
-    [self.myLocationButton setImage:[[UIImage imageNamed:@"location-icon"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
-    [self.pointsOfInterestButton setImage:[UIImage imageNamed:@"marker-icon"] forState:UIControlStateNormal];
+    [self.myLocationButton setImage:[[UIImage imageNamed:@"location-icon" inBundle:[BBConfig libBundle] compatibleWithTraitCollection:nil] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
+    [self.pointsOfInterestButton setImage:[UIImage imageNamed:@"marker-icon" inBundle:[BBConfig libBundle] compatibleWithTraitCollection:nil] forState:UIControlStateNormal];
     
-    self.changeMapButton.tintColor = [BBConfig sharedConfig].customColor;
-    [self.changeMapButton setTitle:NSLocalizedStringFromTable(@"change.map", @"BBLocalizable", nil) forState:UIControlStateNormal];
     
     [self.mapScrollView addSubview:myCurrentLocationView]; // Index 1
     
@@ -454,8 +473,8 @@
                 }
                 
                 if (isFoundSubjectOnThisPlace) {
-                    self.materialTopTitleLabel.text = self.wayfindingRequstObject.subject_name.uppercaseString;
-                    self.materialTopSubtitleLabel.text = self.wayfindingRequstObject.subject_subtitle.uppercaseString;
+                    self.materialTopTitleLabel.text = self.wayfindingRequstObject.subject_name;
+                    self.materialTopSubtitleLabel.text = self.wayfindingRequstObject.subject_subtitle;
                     self.materialTopImageView.image = [self.wayfindingRequstObject.subject_image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
                     self.materialTopImageView.tintColor = [UIColor whiteColor];
                     
@@ -463,8 +482,8 @@
                     
                 } else {
                     if (self.wayfindingRequstObject != nil) {
-                        NSString *message = [NSString stringWithFormat:NSLocalizedStringFromTable(@"error.wayfinding.subject.not.found.for.place", @"BBLocalizable", nil), self.wayfindingRequstObject.subject_name, place.name];
-                        [[[UIAlertView alloc] initWithTitle:NSLocalizedStringFromTable(@"error.subject.not.found", @"BBLocalizable", nil) message:message delegate:nil cancelButtonTitle:NSLocalizedStringFromTable(@"ok", @"BBLocalizable", nil).uppercaseString otherButtonTitles:nil] show];
+                        NSString *message = [NSString stringWithFormat:@"'%@' blev ikke fundet på %@. Du kan stadig bruge kortet, eller du kan prøve at skifte bibliotek ved at klikke på biblioteksnavnet foroven.", self.wayfindingRequstObject.subject_name, place.name];
+                        [[[UIAlertView alloc] initWithTitle:@"Materialet blev ikke fundet" message:message delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles:nil] show];
                     }
                     self.foundSubject = nil;
                     [self showMyFoundMaterialButton:false animated:false];
@@ -480,15 +499,16 @@
             } else {
                 
                 [self.spinner stopAnimating];
-                self.navBarTitleLabel.text = @"";
-                [self showAlert:NSLocalizedStringFromTable(@"unsupported.place.title", @"BBLocalizable", nil) message:NSLocalizedStringFromTable(@"unsupported.place.message", @"BBLocalizable", nil)];
+                self.navBarTitleLabel.text = @"-";
+                self.navBarSubtitleLabel.text = @"Skift bibliotek";
+                [self showAlert:@"Der opstod en fejl" message:@"Vi kan desværre ikke finde noget kort for dit nuværende bibliotek."];
             }
             
         } else {
             [self.spinner stopAnimating];
-            self.navBarTitleLabel.text = @"";
-//            self.navBarSubtitleLabel.text = @"";
-            [self showAlert:NSLocalizedStringFromTable(@"unsupported.place.title", @"BBLocalizable", nil) message:NSLocalizedStringFromTable(@"unsupported.place.message", @"BBLocalizable", nil)];
+            self.navBarTitleLabel.text = @"-";
+            self.navBarSubtitleLabel.text = @"Skift bibliotek";
+            [self showAlert:@"Der opstod en fejl" message:@"Vi kan desværre ikke finde noget kort for dit nuværende bibliotek."];
         }
         
     }];
@@ -688,9 +708,9 @@
                 }
                 
                 
-                if (!foundSubjectPopopViewDisplayed) {
-                    popupView = [[[NSBundle mainBundle] loadNibNamed:@"BBPopupView" owner:self options:nil] firstObject];
-                    popupView.labelTitle.text = NSLocalizedStringFromTable(@"here.is.your.material", @"BBLocalizable", nil).uppercaseString;
+                if (!foundSubjectPopopViewDisplayed && ![[NSUserDefaults standardUserDefaults] boolForKey:BB_POPUP_DONT_SHOW]) {
+                    popupView = [[[BBConfig libBundle] loadNibNamed:@"BBPopupView" owner:self options:nil] firstObject];
+                    popupView.labelTitle.text = @"Her er dit materiale";
 
                     
                     CGFloat height = BB_POPUP_HEIGHT_NORMAL;
@@ -703,33 +723,39 @@
                             // Show a single point for the found subject
                             
                             if (self.foundSubject.locations.count > 1) {
-                                popupView.labelText.text = [NSString stringWithFormat:NSLocalizedStringFromTable(@"your.material.is.around", @"BBLocalizable", nil), currentDisplayFloorRef.name];
+                                popupView.labelText.text = @"Brug knapperne i nederste højre hjørner til at navigere med. Husk du altid kan reserve dit materiale her i app, hvis du mod forventning ikke kan finde den på biblioteket.";
                                 height = BB_POPUP_HEIGHT_LARGE;
                                 
                             } else {
-                                popupView.labelText.text = [NSString stringWithFormat:NSLocalizedStringFromTable(@"your.material.is.at.x", @"BBLocalizable", nil), currentDisplayFloorRef.name];
+                                popupView.labelText.text = @"Brug knapperne i nederste højre hjørner til at navigere med. Husk du altid kan reserve dit materiale her i app, hvis du mod forventning ikke kan finde den på biblioteket.";
                             }
                             
                             
                         } else if (location.type == BBLocationTypeArea) {
                             // Show a Area for the found subject
-                            popupView.labelText.text = [NSString stringWithFormat:NSLocalizedStringFromTable(@"your.material.is.in.area", @"BBLocalizable", nil), currentDisplayFloorRef.name];
+                            popupView.labelText.text = @"Brug knapperne i nederste højre hjørner til at navigere med. Husk du altid kan reserve dit materiale her i app, hvis du mod forventniƒng ikke kan finde den på biblioteket.";
                             
                         }
                         
                     } else if (self.foundSubject.displayType == Cluster) {
                         // Show a Cluster for the found subject
-                        popupView.labelText.text = [NSString stringWithFormat:NSLocalizedStringFromTable(@"your.material.is.in.area", @"BBLocalizable", nil), currentDisplayFloorRef.name];
+                        popupView.labelText.text = @"Brug knapperne i nederste højre hjørner til at navigere med. Husk du altid kan reserve dit materiale her i app, hvis du mod forventniƒng ikke kan finde den på biblioteket.";
                     }
                     
                     
-                        [popupView.buttonOK setTitle:NSLocalizedStringFromTable(@"ok", @"BBLocalizable", nil).uppercaseString forState:UIControlStateNormal];
+                        [popupView.buttonOK setTitle:@"Ok" forState:UIControlStateNormal];
+                    [popupView.buttonOKDontShowAgain setTitle:@"Ok, vis ikke igen" forState:UIControlStateNormal];
+
                     
                     [popupView setFrame:CGRectMake(self.foundSubject.center.x * scaleRatio - BB_POPUP_WIDTH / 2, self.foundSubject.center.y * scaleRatio - height, BB_POPUP_WIDTH, height)];
 
-                    [popupView.buttonOK addTarget:self action:@selector(popupViewOkButtonAction:) forControlEvents: UIControlEventTouchUpInside];
+                    [popupView.buttonOK addTarget:self action:@selector(popupViewButtonOKAction:) forControlEvents: UIControlEventTouchUpInside];
+                    [popupView.buttonOKDontShowAgain addTarget:self action:@selector(popupViewButtonOKDontShowAgainAction:) forControlEvents: UIControlEventTouchUpInside];
+
                     [popupView layoutIfNeeded];
                     [self.mapScrollView addSubview:popupView]; // (Index 2 + areaViews.count + poiViews.count) + popupView (last)
+                    [self zoomToFoundSubject];
+                } else {
                     [self zoomToFoundSubject];
                 }
                 
@@ -1108,15 +1134,19 @@ dispatch_queue_t dispatch_queue_nearest_pixel;
 }
 
 - (IBAction)pointsOfInterestAction:(id)sender {
+    [self hidePopupView];
+
     currentPOIViewController = nil;
-    currentPOIViewController = [[BBLibraryMapPOIViewController alloc] initWithNibName:@"BBLibraryMapPOIViewController" bundle:nil];
+    currentPOIViewController = [[BBLibraryMapPOIViewController alloc] initWithNibName:@"BBLibraryMapPOIViewController" bundle:[BBConfig libBundle]];
     [self presentViewController:currentPOIViewController animated:true completion:nil];
 }
 
 - (IBAction)myLocationAction:(id)sender {
-    if ([self.bluetoothManager userPositioningAvailable]) {
+    if (!place.beacon_positioning_enabled) {
+        [self showAlert:@"Din placering" message:@"Din placering kan ikke lokaliseres på dette bibliotek. Denne løsning virker pt. kun på udvalgte biblioteker."];
+    } else if ([self.bluetoothManager userPositioningAvailable]) {
         if ((myCurrentLocationView.hidden && currentDisplayFloorRef.floor_id == rangedBeaconsFloorRef.floor_id) || (myCurrentLocationView.hidden && rangedBeaconsFloorRef == nil)) {
-            [self showAlert:NSLocalizedStringFromTable(@"ranging.in.progress.title", @"BBLocalizable", nil) message:NSLocalizedStringFromTable(@"ranging.in.progress.message", @"BBLocalizable", nil)];
+            [self showAlert:@"Din placering" message:@"Vi er i gang med at lokalisere din nuværende placering, vi viser den på kortet, så snart vi har fundet den."];
         } else {
              if (rangedBeaconsFloorRef != nil) {
                 if (currentDisplayFloorRef.floor_id != rangedBeaconsFloorRef.floor_id) {
@@ -1132,7 +1162,7 @@ dispatch_queue_t dispatch_queue_nearest_pixel;
             }
         }
     } else {
-        [self showAlert:NSLocalizedStringFromTable(@"invalid.current.location.title", @"BBLocalizable", nil) message:NSLocalizedStringFromTable(@"invalid.current.location.message", @"BBLocalizable", nil)];
+        [self showAlert:@"Vi kan ikke finde din placering" message:@"Sørg for at aktivere bluetooth og tjek eventuelt om du har givet app’en tilladelse til at bruge lokalitet service."];
     }
 }
 
@@ -1162,15 +1192,33 @@ dispatch_queue_t dispatch_queue_nearest_pixel;
 
 }
 
+- (void) changeMapTapGestureAction:(UITapGestureRecognizer *)recognizer {
+    [self hidePopupView];
 
-- (IBAction)changeMapAction:(id)sender {
     currentSelectLibraryViewController = nil;
-    currentSelectLibraryViewController = [[BBLibrarySelectViewController alloc] initWithNibName:@"BBLibrarySelectViewController" bundle:nil];
+    currentSelectLibraryViewController = [[BBLibrarySelectViewController alloc] initWithNibName:@"BBLibrarySelectViewController" bundle:[BBConfig libBundle]];
     currentSelectLibraryViewController.dismissAsSubview = false;
     [self presentViewController:currentSelectLibraryViewController animated:true completion:nil];
 }
 
-- (IBAction)popupViewOkButtonAction:(id)sender {
+//- (IBAction)changeMapAction:(id)sender {
+//    currentSelectLibraryViewController = nil;
+//    currentSelectLibraryViewController = [[BBLibrarySelectViewController alloc] initWithNibName:@"BBLibrarySelectViewController" bundle:[BBConfig libBundle]];
+//    currentSelectLibraryViewController.dismissAsSubview = false;
+//    [self presentViewController:currentSelectLibraryViewController animated:true completion:nil];
+//}
+
+- (IBAction)popupViewButtonOKAction:(id)sender {
+    [self hidePopupView];
+}
+
+- (IBAction)popupViewButtonOKDontShowAgainAction:(id)sender {
+    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:BB_POPUP_DONT_SHOW];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    [self hidePopupView];
+}
+
+- (void) hidePopupView {
     foundSubjectPopopViewDisplayed = YES;
     [popupView removeFromSuperview];
     popupView = nil;
